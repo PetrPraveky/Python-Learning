@@ -1,0 +1,8 @@
+[
+    [
+        "ID: ", "Jmeno: ", "Prijmeni: ", "Datum narozeni: ", "Pohlavi: ", "Rodne cislo: ", "Prezdivka: ", "Adressa: "
+    ],
+    [
+        "ID", "name", "surname", "bdate", "sex", "bnum", "nick", "adress"
+    ]
+]
