@@ -1,0 +1,9 @@
+{
+    "locale": "cs.json",
+
+    "main_root_resolution": "1280x720",
+    "light_dark_mode_resolution": "256x144",
+    "dark_light_mode": 0,
+
+    "operators_list": ["ADD", "SUB", "MUL", "DIV"]
+}
