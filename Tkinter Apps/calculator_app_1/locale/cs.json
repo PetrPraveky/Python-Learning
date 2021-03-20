@@ -11,7 +11,19 @@
     "UB_SB_text": "Nastavení",
 
     "UB_SSM_option_1": "Změna vzhledu",
-    "UB_SSM_option_2": "Změna jazyka",
+    "UB_SSM_option_2": "Změna lokalizace",
 
-    "DL_MW_title": "Změna vzhledu"
+    "DL_MW_title": "Změna vzhledu",
+    "DL_MC_title": "Možnosti změny vzhledu",
+    "DL_MAC_button": "Přijmout",
+    "DL_MCA_button": "Zrušit",
+
+    "LT_title": "Změna lokalizace",
+    "L_title": "Možnosti lokalizace",
+
+    "BC_title": "Mód základní kalkulačky",
+
+    "dark_mode": "Tmavý režim",
+    "light_mode": "Světlý režim",
+    "custom": "Vlastní"
 }
