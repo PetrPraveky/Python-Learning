@@ -8,6 +8,8 @@ from types import SimpleNamespace
 
 default = 0
 calculator_option = default
+calculator_number_memory = 0
+
 #Funkce pro připojení modulu s "kalkulačkou"
 import calculations as calc
 #Funkce pro vypsání připojených modulů do konzole
@@ -21,7 +23,7 @@ class OpenFile():
     #Otevření "data.json" a "locale" souborů
     def file_opener(self):
         global locale_file, data, locale, locale_default #Registrování proměnných
-        with open("./data.json", "r") as g: #Otevření dat
+        with open("./data.json", "r", encoding='UTF-8') as g: #Otevření dat
             data = json.load(g) #Načtení dat
             g.close() #Zavření původního souboru
         #Otevření souborů jazka
@@ -37,8 +39,9 @@ class OpenFile():
     print(f"\nLOCALES: ({locale_file})\n{locale}") #Vypsání obsahu "locale"
     mode = data['dark_light_mode'] #Přiřazení správné možnosti pro změnu vzhledu
   
+  
 #Třída funkčnosti
-class Func(OpenFile):
+class Func(OpenFile, calc.BasicCalculator):
     global new_locale
     new_locale = data['locale']
     #Funkce zavření okna
@@ -86,7 +89,47 @@ class Func(OpenFile):
         self.file_opener()
         self.render_main(data['dark_light_mode'])
         
-
+    #Funkce pro vyčištění kalkulátoru
+    def func_calc_clear(self):
+        render_bc_input_box.delete(0, 'end')
+        render_bc_input_box.config(justify='right')
+        
+    #Funkce pro zaznamenávání čísel kalkulátori
+    def func_calc_num_input(self, num):
+        render_bc_input_box.config(justify='right')
+        current = render_bc_input_box.get()
+        render_bc_input_box.delete(0, 'end')
+        render_bc_input_box.insert(0, str(current) + str(num))
+    
+    
+    def func_calc_oper_input(self, oper):
+        current = render_bc_input_box.get()
+        if current != "":
+            render_bc_input_box.delete(0, 'end')
+            render_bc_input_box.insert(0, str(current) + str(data['operators_chars'][oper]))
+        else:
+            if oper == "-":
+                current = int(current)*(-1)
+                render_bc_input_box.delete(0, 'end')
+                render_bc_input_box.insert(0, str(current))
+            else:
+                pass
+            
+    #Funkce pro shift klávesu v základní kalkulačce
+    def func_calc_shift_down(self):
+        render_bc_button_1_0.config(text="x²")
+        render_bc_button_1_1.config(text="(")
+        render_bc_button_1_2.config(text=")")
+        render_bc_button_2_0.config(text="√", padx=10)
+        render_bc_button_3_0.config(text="↑", command=lambda: self.func_calc_shift_up())
+        
+    def func_calc_shift_up(self):
+        render_bc_button_1_0.config(text="x³")
+        render_bc_button_1_1.config(text="[")
+        render_bc_button_1_2.config(text="]")
+        render_bc_button_2_0.config(text="³√", padx=8)
+        render_bc_button_3_0.config(text="↓", command=lambda: self.func_calc_shift_down())
+        
 #Třída renderu
 class Render(Func):    
     #Funkce pro vytvoření hlavní stránky
@@ -152,42 +195,50 @@ class Render(Func):
     
     #Funkce pro vykreslení základní kalkulačky
     def render_basic_calculator(self):
-        global render_bc_frame
-        #Vytovření rámu pro základkní kalkulačku
+        global render_bc_frame, render_bc_input_box, render_bc_button_1_0, render_bc_button_1_1, render_bc_button_1_2, render_bc_button_2_0, render_bc_button_3_0
+        #Vytovření rámu pro základkní kalkulačku a nastavení listu
         render_bc_frame = Frame(render_main_frame, bg=calc_background_color_1, relief='sunken', borderwidth="2", padx=4, pady=4)
+        render_upper_list_submenu.entryconfig("×  "+locale['UB_LSM_option_1'], state="disabled")
         #Titulek
-        render_bc_title = Label(render_bc_frame, bg=calc_background_color_1, font='bold', fg=main_text_color, text=locale['BC_title'])
-        render_bc_title.grid(row=1, column=0, padx=5, pady=5, columnspan=5)
+        render_bc_title = Label(render_bc_frame, bg=calc_background_color_1, font='bold', fg=main_text_color, text=locale['BC_title'], relief='raised')
+        render_bc_title.grid(row=1, column=0, padx=5, pady=5, columnspan=7, sticky='we')
         #Vytvoření vstupu
-        render_bc_input_box = Entry(render_bc_frame, width=25, relief='sunken', bg=calc_background_color_2, fg=main_text_color, justify='right', font='bold')
-        render_bc_input_box.grid(row=2, column=0, padx=5, pady=5, columnspan=5)
+        render_bc_input_box = Entry(render_bc_frame, width=23, relief='sunken', bg=calc_background_color_2, fg=main_text_color, justify='right', font='bold')
+        render_bc_input_box.grid(row=2, column=0, padx=5, pady=5, columnspan=5, ipady=7, ipadx=6)
         #Vytvoření tlačítek
         #0_0 == řádek 0 a sloupec 0
+        #Řádek 0
+        render_bc_button_0_5 = Button(render_bc_frame, padx=10, pady=6, text="C", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear())
+        render_bc_button_0_6 = Button(render_bc_frame, padx=7, pady=6, text="CE", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear())
         #Řádek 1
-        render_bc_button_1_0 = Button(render_bc_frame, padx=9, pady=6, text="x²", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_1_1 = Button(render_bc_frame, padx=11.5, pady=6, text="(", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_1_2 = Button(render_bc_frame, padx=11.5, pady=6, text=")", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_1_3 = Button(render_bc_frame, padx=10.3, pady=6, text="×", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_1_4 = Button(render_bc_frame, padx=11.2, pady=6, text="/", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_1_0 = Button(render_bc_frame, padx=9, pady=6, text="x²", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(4))
+        render_bc_button_1_1 = Button(render_bc_frame, padx=11, pady=6, text="(", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_1_2 = Button(render_bc_frame, padx=11, pady=6, text=")", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_1_3 = Button(render_bc_frame, padx=10, pady=6, text="×", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(2))
+        render_bc_button_1_4 = Button(render_bc_frame, padx=11, pady=6, text="/", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(3))
         #Řádek 2
-        render_bc_button_2_0 = Button(render_bc_frame, padx=10.2, pady=6, text="√", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_2_1 = Button(render_bc_frame, padx=11, pady=6, text="7", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_2_2 = Button(render_bc_frame, padx=11, pady=6, text="8", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_2_3 = Button(render_bc_frame, padx=11, pady=6, text="9", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_2_4 = Button(render_bc_frame, padx=11, pady=6, text="-", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_2_0 = Button(render_bc_frame, padx=10, pady=6, text="√", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(5))
+        render_bc_button_2_1 = Button(render_bc_frame, padx=11, pady=6, text="7", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(7))
+        render_bc_button_2_2 = Button(render_bc_frame, padx=11, pady=6, text="8", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(8))
+        render_bc_button_2_3 = Button(render_bc_frame, padx=11, pady=6, text="9", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(9))
+        render_bc_button_2_4 = Button(render_bc_frame, padx=11, pady=6, text="-", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(1))
         #Řádek 3
-        render_bc_button_3_0 = Button(render_bc_frame, padx=11, pady=6, text="↑", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_3_1 = Button(render_bc_frame, padx=11, pady=6, text="4", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_3_2 = Button(render_bc_frame, padx=11, pady=6, text="5", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_3_3 = Button(render_bc_frame, padx=11, pady=6, text="6", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_3_4 = Button(render_bc_frame, padx=10, pady=6, text="+", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_3_0 = Button(render_bc_frame, padx=11, pady=6, text="↑", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_shift_up())
+        render_bc_button_3_1 = Button(render_bc_frame, padx=11, pady=6, text="4", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(4))
+        render_bc_button_3_2 = Button(render_bc_frame, padx=11, pady=6, text="5", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(5))
+        render_bc_button_3_3 = Button(render_bc_frame, padx=11, pady=6, text="6", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(6))
+        render_bc_button_3_4 = Button(render_bc_frame, padx=10, pady=6, text="+", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(0))
         #Řádek 4
-        render_bc_button_4_0 = Button(render_bc_frame, padx=11, pady=6, text="0", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_4_1 = Button(render_bc_frame, padx=11, pady=6, text="1", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_4_2 = Button(render_bc_frame, padx=11, pady=6, text="2", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_4_3 = Button(render_bc_frame, padx=11, pady=6, text="3", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_4_4 = Button(render_bc_frame, padx=10, pady=6, text="=", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_4_0 = Button(render_bc_frame, padx=11, pady=6, text="0", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(0))
+        render_bc_button_4_1 = Button(render_bc_frame, padx=11, pady=6, text="1", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(1))
+        render_bc_button_4_2 = Button(render_bc_frame, padx=11, pady=6, text="2", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(2))
+        render_bc_button_4_3 = Button(render_bc_frame, padx=11, pady=6, text="3", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(3))
+        render_bc_button_4_4 = Button(render_bc_frame, padx=12, pady=6, text=",", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input("."))
+        render_bc_button_4_5 = Button(render_bc_frame, padx=10, pady=6, text="=", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
         #Vykreslení tlačítek
+        #Řádek 0
+        render_bc_button_0_5.grid(row=2, column=5, sticky='W', padx=5, pady=5)
+        render_bc_button_0_6.grid(row=2, column=6, sticky='W', padx=5, pady=5)
         #Řádek 1
         render_bc_button_1_0.grid(row=3, column=0, sticky='W', padx=5, pady=5)
         render_bc_button_1_1.grid(row=3, column=1, sticky='W', padx=5, pady=5)
@@ -212,10 +263,11 @@ class Render(Func):
         render_bc_button_4_2.grid(row=6, column=2, sticky='W', padx=5, pady=5)
         render_bc_button_4_3.grid(row=6, column=3, sticky='W', padx=5, pady=5)
         render_bc_button_4_4.grid(row=6, column=4, sticky='W', padx=5, pady=5)
+        render_bc_button_4_5.grid(row=6, column=5, sticky='W', padx=5, pady=5)
     
     #Funkce pro vytvoření horní lišty
     def render_upper_bar(self):
-        global render_upper_bar_frame
+        global render_upper_bar_frame, render_upper_list_submenu
         #Vytvoření horní lišty
         render_upper_bar_frame = Frame(render_main_frame, bg=upper_bar_frame_bg_color, relief='raised', borderwidth="2")
         #Vytvoření tlačítek na liště
@@ -228,7 +280,7 @@ class Render(Func):
         render_upper_list_submenu = Menu(render_upper_list_btn, tearoff=0, bg=upper_bar_frame_submenu_color, fg=main_text_color, disabledforeground=main_text_color, cursor='hand2')
         render_upper_settings_submenu = Menu(render_upper_settings_btn, tearoff=0, bg=upper_bar_frame_submenu_color, fg=main_text_color, disabledforeground=main_text_color, cursor='hand2')
         #Přidání položek do podlistu pro 1. tlačítko
-        render_upper_list_submenu.add_command(label="×  "+locale['UB_LSM_option_1'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state='normal')
+        render_upper_list_submenu.add_command(label="×  "+locale['UB_LSM_option_1'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state='normal', command=lambda:self.render_basic_calculator())
         render_upper_list_submenu.add_command(label="×  "+locale['UB_LSM_option_2'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state='disabled')
         render_upper_list_submenu.add_command(label="×  "+locale['UB_LSM_option_3'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state='disabled')
         render_upper_list_submenu.add_command(label="×  "+locale['UB_LSM_option_4'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state="disabled")
@@ -237,7 +289,7 @@ class Render(Func):
         render_upper_list_submenu.add_command(label="×  "+locale['UB_LSM_option_6'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state='normal', command=lambda:self.func_quit(self.main_root))
         #Přidání položek do podlistu pro 2. tlačítko
         render_upper_settings_submenu.add_command(label="×  "+locale['UB_SSM_option_1'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state='normal', command=self.render_dark_light_mode_window)
-        render_upper_settings_submenu.add_command(label="×  "+locale['UB_SSM_option_2'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state='disabled', command=self.render_locale_type_window)
+        render_upper_settings_submenu.add_command(label="×  "+locale['UB_SSM_option_2'], activebackground=upper_bar_frame_submenu_color_hover, activeforeground=main_text_color, state='normal', command=self.render_locale_type_window)
         #Zpárování podlistů k tlačítkům
         render_upper_settings_btn.config(menu= render_upper_settings_submenu)
         render_upper_list_btn.config(menu= render_upper_list_submenu)
@@ -300,6 +352,7 @@ class Render(Func):
         render_mode_cancel.grid(row=4, column=1, sticky="WS", padx=10, pady=37)
         #Vykreslení rámu nového okna
         render_locale_frame.pack(fill='both', expand='true')
+
 
 class Main(Render, OpenFile):
     def main(self):

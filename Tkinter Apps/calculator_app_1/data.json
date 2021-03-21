@@ -12,6 +12,16 @@
         "ADD",
         "SUB",
         "MUL",
-        "DIV"
+        "DIV",
+        "SQ",
+        "SQROOT"
+    ],
+    "operators_chars": [
+        "+",
+        "-",
+        "×",
+        "/",
+        "²",
+        ""
     ]
 }
