@@ -1,5 +1,6 @@
 import json
 import os
+import operator
 #Třída kalkulac
 number_new = ""
 def calc_connected():
@@ -20,5 +21,5 @@ class OpenFile():
     
 
 class BasicCalculator():
-    def BC_calculations(self, oper, number):
-        return
+    def BC_number_input(self, number):
+        return number

@@ -1,14 +1,13 @@
-import math
-import cmath
 from tkinter import *
 from tkinter import font 
 import json
 import os
-from types import SimpleNamespace
 
 default = 0
 calculator_option = default
-calculator_number_memory = 0
+calculator_memory = ""
+calculator_memoty_num = 0
+
 
 #Funkce pro připojení modulu s "kalkulačkou"
 import calculations as calc
@@ -90,43 +89,171 @@ class Func(OpenFile, calc.BasicCalculator):
         self.render_main(data['dark_light_mode'])
         
     #Funkce pro vyčištění kalkulátoru
-    def func_calc_clear(self):
-        render_bc_input_box.delete(0, 'end')
-        render_bc_input_box.config(justify='right')
-        
-    #Funkce pro zaznamenávání čísel kalkulátori
-    def func_calc_num_input(self, num):
-        render_bc_input_box.config(justify='right')
-        current = render_bc_input_box.get()
-        render_bc_input_box.delete(0, 'end')
-        render_bc_input_box.insert(0, str(current) + str(num))
-    
-    
-    def func_calc_oper_input(self, oper):
-        current = render_bc_input_box.get()
-        if current != "":
+    def func_calc_clear(self, mode):
+        if mode == 'all':
             render_bc_input_box.delete(0, 'end')
-            render_bc_input_box.insert(0, str(current) + str(data['operators_chars'][oper]))
+            render_bc_input_box.config(justify='right')
+            print(calculator_memory)
+        elif mode == 'line':
+            render_bc_input_box.delete(0, 'end')
+            render_bc_input_box.config(justify='right')         
         else:
-            if oper == "-":
-                current = int(current)*(-1)
+            current = render_bc_input_box.get()
+            if current != "":
+                current = current.replace(current[-1], "")
                 render_bc_input_box.delete(0, 'end')
                 render_bc_input_box.insert(0, str(current))
             else:
                 pass
+        
+    #Funkce pro zaznamenávání čísel kalkulátori
+    def func_calc_input(self, mode, var):        
+        if mode == "num":
+            if int(var) in data['number_list']:
+                current = render_bc_input_box.get()
+                if current == "0" and int(var) == 0:
+                    pass
+                else:
+                    try:
+                        if current == "0":
+                            current = render_bc_input_box.get()
+                            render_bc_input_box.delete(0, 'end')
+                            render_bc_input_box.insert(0, str(var))
+                        else:
+                            current = render_bc_input_box.get()
+                            render_bc_input_box.delete(0, 'end')
+                            render_bc_input_box.insert(0, str(current)+str(var))
+                    except:
+                        pass
+        if mode == "oper":
+            if str(var) in data['operators_list']:
+                if str(var) == "ADD":
+                    oper_val = "+"
+                elif str(var) == "SUB":
+                    oper_val = "-"
+                elif str(var) == "MUL":
+                    oper_val = "*"
+                elif str(var) == "DIV":
+                    oper_val = "/"
+                if str(var) in data['operators_list'][:4]:
+                    current = render_bc_input_box.get()
+                    if current == "" and str(var) != 'SUB':
+                        pass
+                    elif current == "" and str(var) == 'SUB':
+                        render_bc_input_box.delete(0, 'end')
+                        render_bc_input_box.insert(0, "0"+'-')
+                    elif current != "":
+                        if current[-1] == ".":
+                            pass
+                        else:
+                            if str(current[-1]) == "(" and var == 'SUB':
+                                render_bc_input_box.delete(0, 'end')                   
+                                render_bc_input_box.insert(0, str(current)+"0"+str(oper_val))                            
+                            else:
+                                if str(current[-1]) == "(" and var != 'SUB':
+                                    pass
+                                else:
+                                    if str(current[-1]) in data["operators_chars"]:
+                                        if current[-2] == "(":
+                                            pass
+                                        else:
+                                            current = str(current[:-1])+str(oper_val)
+                                            render_bc_input_box.delete(0, 'end')                   
+                                            render_bc_input_box.insert(0, str(current))
+                                    else:
+                                        render_bc_input_box.delete(0, 'end')                   
+                                        render_bc_input_box.insert(0, str(current)+str(oper_val))
+        elif mode == "add_oper":
+            if str(var) in data['add_operators_list']:
+                if str(var) == 'LBRACKET':
+                    add_oper_val = "("
+                elif str(var) == 'RBRACKET':
+                    add_oper_val = ")"
+                current = render_bc_input_box.get()
+                if str(var) == "LBRACKET":
+                    if current != "":
+                        if current[-1] == ".":
+                            pass
+                        else:
+                            try:
+                                if int(current[-1]) in data['number_list']:
+                                    pass
+                                else:
+                                    render_bc_input_box.delete(0, 'end')             
+                                    render_bc_input_box.insert(0, str(current)+str(add_oper_val))
+                            except:
+                                render_bc_input_box.delete(0, 'end')             
+                                render_bc_input_box.insert(0, str(current)+str(add_oper_val))
+                    else:
+                        render_bc_input_box.delete(0, 'end')             
+                        render_bc_input_box.insert(0, str(current)+str(add_oper_val))
+                elif str(var) == 'RBRACKET':
+                    if current != "" and str(current[-1]) != ".":
+                        n = 0
+                        lbr_num = 0
+                        while n < len(current):
+                            if str(current[n]) == "(":
+                                lbr_num += 1
+                                n += 1
+                            else:
+                                n += 1
+                        n = 0
+                        rbr_num = 0
+                        while n < len(current):
+                            if str(current[n]) == ")":
+                                rbr_num += 1
+                                n += 1
+                            else:
+                                n += 1
+                        if rbr_num < lbr_num:
+                            if str(current[-1]) in data['operators_chars']:
+                                pass
+                            elif str(current[-1]) == "(":
+                                try:
+                                    if str(current[-2]) == "^":
+                                        current = current[:-2]
+                                    else:
+                                        current = current[:-1]   
+                                except:
+                                    current = current[:-1]                             
+                                render_bc_input_box.delete(0, 'end')               
+                                render_bc_input_box.insert(0, str(current))
+                            else:
+                                if rbr_num > 0:
+                                    render_bc_input_box.delete(0, 'end')             
+                                    render_bc_input_box.insert(0, str(current)+str(add_oper_val))                                   
+                                else:
+                                    render_bc_input_box.delete(0, 'end')             
+                                    render_bc_input_box.insert(0, str(current)+str(add_oper_val))
+                        else:
+                            print(str(lbr_num)+" "+str(rbr_num))
+                            print('err')
+                    else:
+                        pass
+        elif mode == "dec":
+            current = render_bc_input_box.get()
+            try:
+                if int(current[-1]) in data['number_list']:
+                    render_bc_input_box.delete(0, 'end')             
+                    render_bc_input_box.insert(0, str(current)+str(var))
+                else:
+                    pass
+            except:
+                pass
+        return
             
     #Funkce pro shift klávesu v základní kalkulačce
     def func_calc_shift_down(self):
-        render_bc_button_1_0.config(text="x²")
-        render_bc_button_1_1.config(text="(")
-        render_bc_button_1_2.config(text=")")
+        render_bc_button_1_0.config(text="x²", padx=9)
+        # render_bc_button_1_1.config(text="(")
+        # render_bc_button_1_2.config(text=")")
         render_bc_button_2_0.config(text="√", padx=10)
         render_bc_button_3_0.config(text="↑", command=lambda: self.func_calc_shift_up())
         
     def func_calc_shift_up(self):
-        render_bc_button_1_0.config(text="x³")
-        render_bc_button_1_1.config(text="[")
-        render_bc_button_1_2.config(text="]")
+        render_bc_button_1_0.config(text="x^n ", padx=2)
+        # render_bc_button_1_1.config(text="[")
+        # render_bc_button_1_2.config(text="]")
         render_bc_button_2_0.config(text="³√", padx=8)
         render_bc_button_3_0.config(text="↓", command=lambda: self.func_calc_shift_down())
         
@@ -208,32 +335,33 @@ class Render(Func):
         #Vytvoření tlačítek
         #0_0 == řádek 0 a sloupec 0
         #Řádek 0
-        render_bc_button_0_5 = Button(render_bc_frame, padx=10, pady=6, text="C", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear())
-        render_bc_button_0_6 = Button(render_bc_frame, padx=7, pady=6, text="CE", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear())
+        render_bc_button_0_5 = Button(render_bc_frame, padx=10, pady=6, text="←", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear('char'))
+        render_bc_button_0_6 = Button(render_bc_frame, padx=10, pady=6, text="C", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear('line'))
         #Řádek 1
-        render_bc_button_1_0 = Button(render_bc_frame, padx=9, pady=6, text="x²", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(4))
-        render_bc_button_1_1 = Button(render_bc_frame, padx=11, pady=6, text="(", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_1_2 = Button(render_bc_frame, padx=11, pady=6, text=")", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
-        render_bc_button_1_3 = Button(render_bc_frame, padx=10, pady=6, text="×", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(2))
-        render_bc_button_1_4 = Button(render_bc_frame, padx=11, pady=6, text="/", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(3))
+        render_bc_button_1_0 = Button(render_bc_frame, padx=9, pady=6, text="x²", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_1_1 = Button(render_bc_frame, padx=11, pady=6, text="(", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('add_oper', 'LBRACKET'))
+        render_bc_button_1_2 = Button(render_bc_frame, padx=11, pady=6, text=")", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('add_oper', 'RBRACKET'))
+        render_bc_button_1_3 = Button(render_bc_frame, padx=10, pady=6, text="×", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('oper', 'MUL'))
+        render_bc_button_1_4 = Button(render_bc_frame, padx=11, pady=6, text="/", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('oper', 'DIV'))
+        render_bc_button_1_6 = Button(render_bc_frame, padx=7, pady=6, text="CE", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear('all'))
         #Řádek 2
-        render_bc_button_2_0 = Button(render_bc_frame, padx=10, pady=6, text="√", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(5))
-        render_bc_button_2_1 = Button(render_bc_frame, padx=11, pady=6, text="7", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(7))
-        render_bc_button_2_2 = Button(render_bc_frame, padx=11, pady=6, text="8", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(8))
-        render_bc_button_2_3 = Button(render_bc_frame, padx=11, pady=6, text="9", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(9))
-        render_bc_button_2_4 = Button(render_bc_frame, padx=11, pady=6, text="-", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(1))
+        render_bc_button_2_0 = Button(render_bc_frame, padx=10, pady=6, text="√", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_2_1 = Button(render_bc_frame, padx=11, pady=6, text="7", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 7))
+        render_bc_button_2_2 = Button(render_bc_frame, padx=11, pady=6, text="8", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 8))
+        render_bc_button_2_3 = Button(render_bc_frame, padx=11, pady=6, text="9", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 9))
+        render_bc_button_2_4 = Button(render_bc_frame, padx=11, pady=6, text="-", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('oper', 'SUB'))
         #Řádek 3
         render_bc_button_3_0 = Button(render_bc_frame, padx=11, pady=6, text="↑", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_shift_up())
-        render_bc_button_3_1 = Button(render_bc_frame, padx=11, pady=6, text="4", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(4))
-        render_bc_button_3_2 = Button(render_bc_frame, padx=11, pady=6, text="5", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(5))
-        render_bc_button_3_3 = Button(render_bc_frame, padx=11, pady=6, text="6", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(6))
-        render_bc_button_3_4 = Button(render_bc_frame, padx=10, pady=6, text="+", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_oper_input(0))
+        render_bc_button_3_1 = Button(render_bc_frame, padx=11, pady=6, text="4", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 4))
+        render_bc_button_3_2 = Button(render_bc_frame, padx=11, pady=6, text="5", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 5))
+        render_bc_button_3_3 = Button(render_bc_frame, padx=11, pady=6, text="6", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 6))
+        render_bc_button_3_4 = Button(render_bc_frame, padx=10, pady=6, text="+", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('oper', 'ADD'))
         #Řádek 4
-        render_bc_button_4_0 = Button(render_bc_frame, padx=11, pady=6, text="0", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(0))
-        render_bc_button_4_1 = Button(render_bc_frame, padx=11, pady=6, text="1", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(1))
-        render_bc_button_4_2 = Button(render_bc_frame, padx=11, pady=6, text="2", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(2))
-        render_bc_button_4_3 = Button(render_bc_frame, padx=11, pady=6, text="3", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input(3))
-        render_bc_button_4_4 = Button(render_bc_frame, padx=12, pady=6, text=",", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_num_input("."))
+        render_bc_button_4_0 = Button(render_bc_frame, padx=11, pady=6, text="0", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 0))
+        render_bc_button_4_1 = Button(render_bc_frame, padx=11, pady=6, text="1", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 1))
+        render_bc_button_4_2 = Button(render_bc_frame, padx=11, pady=6, text="2", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 2))
+        render_bc_button_4_3 = Button(render_bc_frame, padx=11, pady=6, text="3", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 3))
+        render_bc_button_4_4 = Button(render_bc_frame, padx=12, pady=6, text=",", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('dec', "."))
         render_bc_button_4_5 = Button(render_bc_frame, padx=10, pady=6, text="=", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
         #Vykreslení tlačítek
         #Řádek 0
@@ -245,6 +373,7 @@ class Render(Func):
         render_bc_button_1_2.grid(row=3, column=2, sticky='W', padx=5, pady=5)
         render_bc_button_1_3.grid(row=3, column=3, sticky='W', padx=5, pady=5)
         render_bc_button_1_4.grid(row=3, column=4, sticky='W', padx=5, pady=5)
+        render_bc_button_1_6.grid(row=3, column=6, sticky='W', padx=5, pady=5)
         #Řádek
         render_bc_button_2_0.grid(row=4, column=0, sticky='W', padx=5, pady=5)
         render_bc_button_2_1.grid(row=4, column=1, sticky='W', padx=5, pady=5)
@@ -367,6 +496,7 @@ class Main(Render, OpenFile):
         self.render_main(mode)
         #Cyklus aplikace
         self.main_root.mainloop()
+        os.system('cls')
 
 if __name__ == "__main__":
     myapp = Main()
