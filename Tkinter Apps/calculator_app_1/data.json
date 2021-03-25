@@ -15,8 +15,8 @@
         "DIV",
         "SQ",
         "SQROOT",
-        "CUBA",
-        "CUBEROOT"
+        "NSQ",
+        "NROOT"
     ],
     "operators_chars": [
         "+",

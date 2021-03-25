@@ -2,18 +2,22 @@ from tkinter import *
 from tkinter import font 
 import json
 import os
+import sys
+
+sys.path.insert(1, os.path.join('function'))
 
 default = 0
 calculator_option = default
 calculator_memory = ""
 calculator_memoty_num = 0
 
-
 #Funkce pro připojení modulu s "kalkulačkou"
 import calculations as calc
+
 #Funkce pro vypsání připojených modulů do konzole
 def main_connected():
     print("\nmain.py has been connected to file:")
+    #Připojení modulu kalkulací
     calc.calc_connected()
     print("\n")
 
@@ -22,12 +26,11 @@ class OpenFile():
     #Otevření "data.json" a "locale" souborů
     def file_opener(self):
         global locale_file, data, locale, locale_default #Registrování proměnných
-        with open("./data.json", "r", encoding='UTF-8') as g: #Otevření dat
+        with open(os.path.join('data.json'), "r", encoding='UTF-8') as g: #Otevření dat
             data = json.load(g) #Načtení dat
             g.close() #Zavření původního souboru
         #Otevření souborů jazka
-        locale_file = "locale/"+data["locale"] #Přidání správné cesty k lokalizacím
-        with open(locale_file, "r", encoding="UTF-8") as f: #Otevření lkkalizace
+        with open(os.path.join('locale', data['locale']), "r", encoding="UTF-8") as f: #Otevření lkkalizace
             locale = json.load(f) #Načtení lokalizace
             f.close() #Zavření původního souboru
             locale_default = 0
@@ -35,12 +38,13 @@ class OpenFile():
     file_opener(0) #Zavolání funkce na otveření souboru
     os.system('cls') #Vyčištění konzole
     print(f"DATA: (data.json)\n{data}") #Vypsnání obsahu "data.json"
-    print(f"\nLOCALES: ({locale_file})\n{locale}") #Vypsání obsahu "locale"
+    print(f"\nLOCALES: ({os.path.join('locale', data['locale'])})\n{locale}") #Vypsání obsahu "locale"
     mode = data['dark_light_mode'] #Přiřazení správné možnosti pro změnu vzhledu
   
-  
+
 #Třída funkčnosti
 class Func(OpenFile, calc.BasicCalculator):
+    #Proměnná pro změnu jazyka
     global new_locale
     new_locale = data['locale']
     #Funkce zavření okna
@@ -56,113 +60,137 @@ class Func(OpenFile, calc.BasicCalculator):
         
     #Funkce pro uložení změny vzhledu
     def func_settings_change(self, val):
-        with open("./data.json", "r+") as t:
-            new_data = json.load(t)
-            new_data['dark_light_mode'] = val
-            t.seek(0)
-            json.dump(new_data, t, indent=4)
+        with open("./data.json", "r+") as t: #Otevření dat s módem zapisování
+            new_data = json.load(t) #Načtení  dat
+            new_data['dark_light_mode'] = val #Přiřazení nové hodnoty
+            t.seek(0) #Resetování řádku na 1.
+            json.dump(new_data, t, indent=4) #Přepsání starých dat s novými
             t.truncate()
-            t.close()
+            t.close() #Zavření souboru
             
     #Funkce pro uložení jazyka
     def func_locale_save(self):
-        with open("./data.json", "r+") as h:
-            new_data = json.load(h)
-            new_data['locale'] = self.new_locale
-            h.seek(0)
-            json.dump(new_data, h, indent=4)
+        with open("./data.json", "r+") as h: #Otevření dat s módem zapisování
+            new_data = json.load(h) #Načtení dat
+            new_data['locale'] = self.new_locale #Přiřazení nové hodnoty
+            h.seek(0) #Resetování řádku na 1.
+            json.dump(new_data, h, indent=4) #Přepsání starých dat s novými
             h.truncate()
-            h.close()
+            h.close() #Zavření souboru
     
     #Funkce změny vzhledu
-    def func_appear_change(self, val):  
-        print("\ndakr/light mode has been set to: "+str(val))
+    def func_appear_change(self, val):
+        print("\ndakr/light mode has been set to: "+str(val)) #Vypsání změny vzhledu do konzole pro debug   
         
     #Funkce na změnu jazyka    
     def func_laguage_change(self, root, value):
-        print("\nlocalisation file set to: "+value)
-        self.new_locale = value
-        self.func_locale_save()
-        self.func_quit(root)
-        render_main_frame.pack_forget()
-        self.file_opener()
-        self.render_main(data['dark_light_mode'])
+        print("\nlocalisation file set to: "+value) #Vypsní změny jazky do koncole pro debug
+        self.new_locale = value #Přiřazení nové hodnoty
+        self.func_locale_save() #Zavolání funkce pro uložení změny jazyka
+        self.func_quit(root) #Zavření okna
+        render_main_frame.pack_forget() #Resetování hlavního rámu
+        self.file_opener() #Znovu načtení dat se změnou
+        self.render_main(data['dark_light_mode']) #Znovu vykreslení rámu
         
     #Funkce pro vyčištění kalkulátoru
     def func_calc_clear(self, mode):
-        if mode == 'all':
-            render_bc_input_box.delete(0, 'end')
-            render_bc_input_box.config(justify='right')
-            print(calculator_memory)
-        elif mode == 'line':
-            render_bc_input_box.delete(0, 'end')
-            render_bc_input_box.config(justify='right')         
-        else:
-            current = render_bc_input_box.get()
-            if current != "":
-                current = current.replace(current[-1], "")
-                render_bc_input_box.delete(0, 'end')
-                render_bc_input_box.insert(0, str(current))
-            else:
+        if mode == 'all': #Vyčištění řádku i paměti
+            render_bc_input_box.delete(0, 'end') #Vymazání řídku
+        elif mode == 'line': #Vyčištění řádku
+            render_bc_input_box.delete(0, 'end') #Vymazání řádku 
+        else: #Vyčištění poslední hodnoty/znaku
+            current = render_bc_input_box.get() #Získání dat z řádku
+            if current != "": #Testuje, zda-li je řádek prázdný
+                current = current.replace(current[-1], "") #Vymaže poslední znak
+                render_bc_input_box.delete(0, 'end') #Vymazní řádku
+                render_bc_input_box.insert(0, str(current)) #Vypsání nového řádku
+            else: #Jinak přeskočit příkaz
                 pass
         
-    #Funkce pro zaznamenávání čísel kalkulátori
+    #Funkce pro zaznamenávání čísel kalkulátoru
     def func_calc_input(self, mode, var):        
-        if mode == "num":
-            if int(var) in data['number_list']:
-                current = render_bc_input_box.get()
-                if current == "0" and int(var) == 0:
+        if mode == "num": #Testuje, zda-li je zadané číslo
+            if int(var) in data['number_list']: #Testuje, zda-li je číslo platné
+                current = render_bc_input_box.get() #Záskání dat z řádku
+                if current == "0" and int(var) == 0: #Pokud-li jediné, co řádek obsahuje je 0, nenapíše další nulu
                     pass
-                else:
-                    try:
-                        if current == "0":
-                            current = render_bc_input_box.get()
-                            render_bc_input_box.delete(0, 'end')
-                            render_bc_input_box.insert(0, str(var))
-                        else:
-                            current = render_bc_input_box.get()
-                            render_bc_input_box.delete(0, 'end')
-                            render_bc_input_box.insert(0, str(current)+str(var))
-                    except:
+                else: #Ostatní možnosti
+                    try: #Testování errorů
+                        if current == "0": #Pokud-li jediné, co řádek obsahuje je 0, číslo nulu přepíše
+                            render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                            render_bc_input_box.insert(0, str(var)) #Vypsání nového řádku
+                        else: #Ostatní možnosti
+                            render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                            render_bc_input_box.insert(0, str(current)+str(var)) #Vypsání nového řádku
+                    except: #Pokud-li přijde error, přeskočí příkaz
                         pass
-        if mode == "oper":
-            if str(var) in data['operators_list']:
-                if str(var) == "ADD":
-                    oper_val = "+"
-                elif str(var) == "SUB":
-                    oper_val = "-"
-                elif str(var) == "MUL":
-                    oper_val = "*"
-                elif str(var) == "DIV":
-                    oper_val = "/"
-                if str(var) in data['operators_list'][:4]:
-                    current = render_bc_input_box.get()
-                    if current == "" and str(var) != 'SUB':
+            else: #Pokud číslo není validní, přeskočí příkaz
+                pass
+        if mode == "oper": #Testuje, zda-li je zadaná operace
+            if str(var) in data['operators_list']: #Testuje, zda-li je operace platná
+                if str(var) == "ADD": #Pokud je operace sčítání
+                    oper_val = "+" #Vypíše se +
+                elif str(var) == "SUB": #Pokud je operace odčítání
+                    oper_val = "-" #Vypíše se -
+                elif str(var) == "MUL": #Pokud je operace násobení
+                    oper_val = "*" #Vypíše se *
+                elif str(var) == "DIV": #Pokud je operace dělení
+                    oper_val = "/" #Vypíše se /
+                if str(var) in data['operators_list'][:4]: #Testuje, zda-li je číslo mezi základníma operacema
+                    current = render_bc_input_box.get() #Získání dat z řdku
+                    if current == "" and str(var) != 'SUB': #Pokud-li je řádek prázdný a operace není odčítání, přeskočí příkaz
                         pass
-                    elif current == "" and str(var) == 'SUB':
-                        render_bc_input_box.delete(0, 'end')
-                        render_bc_input_box.insert(0, "0"+'-')
-                    elif current != "":
-                        if current[-1] == ".":
+                    elif current == "" and str(var) == 'SUB': #Pokud-li je řádek prázdný a operace je odčítání, vypíše "0-"
+                        render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                        render_bc_input_box.insert(0, "0"+'-') #Vypsání nového řádku
+                    elif current != "": #Pokud-li řádek není prázdný
+                        if current[-1] == ".": #Pokud-li je poslední znak desetinná čárka, přeskočí
                             pass
                         else:
-                            if str(current[-1]) == "(" and var == 'SUB':
-                                render_bc_input_box.delete(0, 'end')                   
-                                render_bc_input_box.insert(0, str(current)+"0"+str(oper_val))                            
+                            if str(current[-1]) == "(" and var == 'SUB': #Pokudli je poslední znak otevřená závorka a operace je odčítání, vypíše se "0-"
+                                render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                                render_bc_input_box.insert(0, str(current)+"0"+'-') #Vypsání nového řádku                           
                             else:
-                                if str(current[-1]) == "(" and var != 'SUB':
+                                if str(current[-1]) == "(" and var != 'SUB': #Pokud je poseldní znak optevřená závorka a operace není odčítání, přeskočí příkaz
                                     pass
                                 else:
-                                    if str(current[-1]) in data["operators_chars"]:
-                                        if current[-2] == "(":
+                                    if str(current[-1]) in data["operators_chars"]: #Testuje, jestli je poslední znak mezi znakama operací
+                                        if current[-2] == "(": #Pokud je předposlední znak otevřené závorka, příkaz se přeskočí
                                             pass
                                         else:
-                                            current = str(current[:-1])+str(oper_val)
-                                            render_bc_input_box.delete(0, 'end')                   
-                                            render_bc_input_box.insert(0, str(current))
+                                            current = str(current[:-1])+str(oper_val) #Přepsání starého znaku operace za nový
+                                            render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                                            render_bc_input_box.insert(0, str(current)) #Vypsání nového řádku
                                     else:
-                                        render_bc_input_box.delete(0, 'end')                   
-                                        render_bc_input_box.insert(0, str(current)+str(oper_val))
+                                        render_bc_input_box.delete(0, 'end') #Vymazání řádku             
+                                        render_bc_input_box.insert(0, str(current)+str(oper_val)) #Vypsání nového řádku
+                elif str(var) in data['operators_list'][3:] and str(var) not in data['operators_list'][8:]: #Testuje, zda-li jsou operace mezi pokročilými
+                    current = render_bc_input_box.get() #Zíkání dat z řádku
+                    if current == "": #Pokud je řádek prázdný, příkaz se přeskočí
+                        pass
+                    else:
+                        if current[-1] in data['operators_chars']: #Pokud je poslední znak jiný operátor, příkaz se přeskočí
+                            pass
+                        else:
+                            if current[-1] == "(": #Pokud je poslední znak otevřená závorka, příkaz se přeskočí
+                                pass
+                            else:
+                                if str(var) == "SQ": #Pokud je operace druhá mocnina
+                                    render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                                    render_bc_input_box.insert(0, str(current)+"^(2)") #Vypsání nového řádku
+                                elif str(var) == "SQROOT": #Pokud je operace druhá odmocnina
+                                    render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                                    render_bc_input_box.insert(0, str(current)+"^(1/2)") #Vypsání nového řádku  
+                                elif str(var) == "NSQ": #Pokud je operace mocnina na "entou"
+                                    render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                                    render_bc_input_box.insert(0, str(current)+"^(") #Vypsání nového řádku
+                                elif str(var) == "NROOT": #Pokud je operace odmocnina na "entou"
+                                    render_bc_input_box.delete(0, 'end') #Vymazání řádku
+                                    render_bc_input_box.insert(0, str(current)+"^(1/") #Vypsání nového řádku   
+                                else:
+                                    pass
+                else:
+                    pass
         elif mode == "add_oper":
             if str(var) in data['add_operators_list']:
                 if str(var) == 'LBRACKET':
@@ -230,6 +258,8 @@ class Func(OpenFile, calc.BasicCalculator):
                             print('err')
                     else:
                         pass
+            else:
+                pass
         elif mode == "dec":
             current = render_bc_input_box.get()
             try:
@@ -240,21 +270,16 @@ class Func(OpenFile, calc.BasicCalculator):
                     pass
             except:
                 pass
-        return
             
     #Funkce pro shift klávesu v základní kalkulačce
     def func_calc_shift_down(self):
-        render_bc_button_1_0.config(text="x²", padx=9)
-        # render_bc_button_1_1.config(text="(")
-        # render_bc_button_1_2.config(text=")")
-        render_bc_button_2_0.config(text="√", padx=10)
+        render_bc_button_1_0.config(text="x²", padx=9, command= lambda: self.func_calc_input('oper', 'SQ'))
+        render_bc_button_2_0.config(text="√", padx=10, command= lambda: self.func_calc_input('oper', 'SQROOT'))
         render_bc_button_3_0.config(text="↑", command=lambda: self.func_calc_shift_up())
         
     def func_calc_shift_up(self):
-        render_bc_button_1_0.config(text="x^n ", padx=2)
-        # render_bc_button_1_1.config(text="[")
-        # render_bc_button_1_2.config(text="]")
-        render_bc_button_2_0.config(text="³√", padx=8)
+        render_bc_button_1_0.config(text="x^n ", padx=2, command= lambda: self.func_calc_input('oper', 'NSQ'))
+        render_bc_button_2_0.config(text="³√", padx=8, command= lambda: self.func_calc_input('oper', 'NROOT'))
         render_bc_button_3_0.config(text="↓", command=lambda: self.func_calc_shift_down())
         
 #Třída renderu
@@ -338,14 +363,14 @@ class Render(Func):
         render_bc_button_0_5 = Button(render_bc_frame, padx=10, pady=6, text="←", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear('char'))
         render_bc_button_0_6 = Button(render_bc_frame, padx=10, pady=6, text="C", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear('line'))
         #Řádek 1
-        render_bc_button_1_0 = Button(render_bc_frame, padx=9, pady=6, text="x²", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_1_0 = Button(render_bc_frame, padx=9, pady=6, text="x²", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('oper', 'SQ'))
         render_bc_button_1_1 = Button(render_bc_frame, padx=11, pady=6, text="(", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('add_oper', 'LBRACKET'))
         render_bc_button_1_2 = Button(render_bc_frame, padx=11, pady=6, text=")", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('add_oper', 'RBRACKET'))
         render_bc_button_1_3 = Button(render_bc_frame, padx=10, pady=6, text="×", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('oper', 'MUL'))
         render_bc_button_1_4 = Button(render_bc_frame, padx=11, pady=6, text="/", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('oper', 'DIV'))
         render_bc_button_1_6 = Button(render_bc_frame, padx=7, pady=6, text="CE", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command=lambda: self.func_calc_clear('all'))
         #Řádek 2
-        render_bc_button_2_0 = Button(render_bc_frame, padx=10, pady=6, text="√", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2')
+        render_bc_button_2_0 = Button(render_bc_frame, padx=10, pady=6, text="√", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('oper', 'SQROOT'))
         render_bc_button_2_1 = Button(render_bc_frame, padx=11, pady=6, text="7", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 7))
         render_bc_button_2_2 = Button(render_bc_frame, padx=11, pady=6, text="8", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 8))
         render_bc_button_2_3 = Button(render_bc_frame, padx=11, pady=6, text="9", fg=main_text_color, bg=calc_background_color_2, activebackground=calc_background_color_2_hover, activeforeground=main_text_color, cursor='hand2', command= lambda: self.func_calc_input('num', 9))
